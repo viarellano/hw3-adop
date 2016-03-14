@@ -1,5 +1,7 @@
 #!/bin/bash -e
 
+HOME_DIR=/c/HackersWeek/devops
+
 CERT_PATH=$1
 echo ${CERT_PATH}
 if [ -z ${CERT_PATH} ]; then
@@ -33,9 +35,12 @@ fi
 ####
 # Fresh start
 #### 
-TEMP_CERT_PATH="${HOME}/docker_certs"
+TEMP_CERT_PATH="$HOME_DIR/docker_certs"
 rm -rf ${TEMP_CERT_PATH}
 mkdir -p ${TEMP_CERT_PATH}
+
+# copy .docker/machine/certs directory
+cp -R ${HOME}/.docker/machine/certs ${HOME_DIR}
 
 ####
 # * Generate the client private key
@@ -45,9 +50,9 @@ mkdir -p ${TEMP_CERT_PATH}
 openssl genrsa -out ${TEMP_CERT_PATH}/key.pem 4096
 openssl req -subj "${CLIENT_SUBJ}" -new -key ${TEMP_CERT_PATH}/key.pem -out ${TEMP_CERT_PATH}/client.csr
 echo "extendedKeyUsage = clientAuth" >  ${TEMP_CERT_PATH}/extfile.cnf
-openssl x509 -req -days 365 -sha256 -in ${TEMP_CERT_PATH}/client.csr -CA ${HOME}/.docker/machine/certs/ca.pem -CAkey ${HOME}/.docker/machine/certs/ca-key.pem -CAcreateserial -out ${TEMP_CERT_PATH}/cert.pem -extfile ${TEMP_CERT_PATH}/extfile.cnf
-cp ${HOME}/.docker/machine/certs/ca.pem ${TEMP_CERT_PATH}/ca.pem
-docker --tlsverify --tlscacert=${HOME}/.docker/machine/certs/ca.pem --tlscert=${TEMP_CERT_PATH}/cert.pem --tlskey=${TEMP_CERT_PATH}/key.pem -H=${DOCKER_HOST} version
+openssl x509 -req -days 365 -sha256 -in ${TEMP_CERT_PATH}/client.csr -CA ${HOME_DIR}/certs/ca.pem -CAkey ${HOME_DIR}/certs/ca-key.pem -CAcreateserial -out ${TEMP_CERT_PATH}/cert.pem -extfile ${TEMP_CERT_PATH}/extfile.cnf
+cp ${HOME_DIR}/certs/ca.pem ${TEMP_CERT_PATH}/ca.pem
+docker --tlsverify --tlscacert=${HOME_DIR}/certs/ca.pem --tlscert=${TEMP_CERT_PATH}/cert.pem --tlskey=${TEMP_CERT_PATH}/key.pem -H=${DOCKER_HOST} version
 
 ####
 # * Remove unnecessary files
